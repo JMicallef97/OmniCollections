@@ -1,0 +1,4 @@
+C:\Users\Jacob\documents\visual studio 2010\Projects\OmniBuffer\OmniBuffer\bin\Debug\OmniCollections.dll
+C:\Users\Jacob\documents\visual studio 2010\Projects\OmniBuffer\OmniBuffer\bin\Debug\OmniCollections.pdb
+C:\Users\Jacob\documents\visual studio 2010\Projects\OmniBuffer\OmniBuffer\obj\Debug\OmniCollections.dll
+C:\Users\Jacob\documents\visual studio 2010\Projects\OmniBuffer\OmniBuffer\obj\Debug\OmniCollections.pdb
