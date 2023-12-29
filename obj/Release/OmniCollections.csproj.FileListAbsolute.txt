@@ -2,3 +2,7 @@ C:\Users\Jacob\documents\visual studio 2010\Projects\OmniBuffer\OmniBuffer\bin\R
 C:\Users\Jacob\documents\visual studio 2010\Projects\OmniBuffer\OmniBuffer\bin\Release\OmniCollections.pdb
 C:\Users\Jacob\documents\visual studio 2010\Projects\OmniBuffer\OmniBuffer\obj\Release\OmniCollections.dll
 C:\Users\Jacob\documents\visual studio 2010\Projects\OmniBuffer\OmniBuffer\obj\Release\OmniCollections.pdb
+C:\Users\jmicallef1\Documents\Visual Studio 2010\Projects\OmniBuffer\OmniBuffer\bin\Release\OmniCollections.dll
+C:\Users\jmicallef1\Documents\Visual Studio 2010\Projects\OmniBuffer\OmniBuffer\bin\Release\OmniCollections.pdb
+C:\Users\jmicallef1\Documents\Visual Studio 2010\Projects\OmniBuffer\OmniBuffer\obj\Release\OmniCollections.dll
+C:\Users\jmicallef1\Documents\Visual Studio 2010\Projects\OmniBuffer\OmniBuffer\obj\Release\OmniCollections.pdb

@@ -128,32 +128,7 @@ namespace OmniCollections
                     throw new IndexOutOfRangeException();
                 }
 
-                switch (this.isBufferReversed)
-                {
-                    case false:
-                        // -buffer is not reversed. Traverse buffer normally.
-                        // larger indices result in values that approach the start index "from the left" (wrapping around from the end of the collection back to the start)
-                        return baseCollection[computeIndex(collectionStartIndex + index)];
-
-                    case true:
-                        // -buffer has been reversed. Traverse buffer backwards.
-                        // -larger indices should result in values that approach the start index "from the right"
-                        // -to begin, check result of subtracting desired index from collection start index
-                        if (collectionStartIndex - index < 0)
-                        {
-                            // fell off left edge of collection (resulted in an index less than 0)
-                            // -wrap index back around into the collection's range by adding Count -1 to it
-                            return baseCollection[computeIndex((collectionStartIndex - index) + (Count))]; // count - 1
-                        }
-                        else
-                        {
-                            // within bounds
-                            return baseCollection[computeIndex(collectionStartIndex - index)];
-                        }
-
-                    default:
-                        return default(T);
-                }
+                return baseCollection[computeIndex(index)];
             }
 
             set
@@ -168,25 +143,40 @@ namespace OmniCollections
         /// </summary>
         /// <param name="circularIndex">Index to convert. If less than 0, or it is greater than or equal to base collection count, the function will throw an exception.</param>
         /// <returns>Index which corresponds to a location within the base collection list.</returns>
-        private int computeIndex(int circularIndex)
+        private int computeIndex(int index)
         {
-            return (circularIndex % Count);
+            switch (this.isBufferReversed)
+            {
+                case false:
+                    // -buffer is not reversed. Traverse buffer normally.
+                    // larger indices result in values that approach the start index "from the left" (wrapping around from the end of the base collection back to the start)
+                    return (collectionStartIndex + index) % Count;
 
-            //switch (this.bufferMode)
-            //{
-            //    case OmniBufferMode.List:
-            //        // finally, compute base collection index by applying modulo (base list count) to "wrap"
-            //        // circular index around
-            //        return (circularIndex % Count);
+                case true:
+                    // -buffer has been reversed. Traverse buffer backwards.
+                    // -larger indices should result in values that approach the start index "from the right" (wrapping around from the start of the base collection back to the end)
+                    // -because of the peridocity involved when using the modulo operator, indices smaller than
+                    //  the collection start index repeat.
+                    // -can get values at smaller indices with larger (increasing) indices by adding the base list count
+                    //  to the start index (to complete the next "cycle") and subtracting the index provided to "move the
+                    //  clock hands back" to the desired index.
 
-            //    case OmniBufferMode.List_Reversed:
-            //        // larger indices should return values closer to the start index
-            //        //return ((collectionStartIndex + baseCollection.Count - 1) - (circularIndex % Count) % Count);
-            //        return ((collectionStartIndex + baseCollection.Count - 1) - (circularIndex % Count)) + collectionStartIndex;
+                    // Example: Given the list "1,2,3,4,5", index 4 is the start index (contains the element '5') and
+                    // the list is reversed. The index provided by the indexer is 1.
+                    // 1. Add the list count to the start index: 4 + 5 = 9
+                    // 2. Subtract the index provided by the indexer: 9 - 1 = 8
+                    // 3. Apply the modulo operator with the base collection count to the result, to move the
+                    //     result back into the range of the base collection (0 to base collection count): 8 % 5 = 3
+                    // 
+                    // -The index 3 is one less than the start index, which was 4, which is what was expected.
 
-            //    default:
-            //        return -1;
-            //}
+                    return (collectionStartIndex + (Count - index)) % Count;
+
+                default:
+                    return -1;
+            }
+
+            //return (circularIndex % Count);
         }
 
         #endregion
@@ -233,7 +223,7 @@ namespace OmniCollections
 
         #endregion
 
-        // functions relating to overall buffer properties
+        // functions relating to buffer-unique properties
         #region BUFFER RELATED FUNCTIONS
 
         /// <summary>
