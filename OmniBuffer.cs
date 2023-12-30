@@ -289,6 +289,37 @@ namespace OmniCollections
             }
         }
 
+        /// <summary>
+        /// Check if OmniBuffer contains an item, returns a boolean value indicating if item is contained.
+        /// </summary>
+        /// <param name="Item">The item to search for.</param>
+        /// <returns></returns>
+        public bool Contains(T Item)
+        {
+            return this.baseCollection.Contains(Item);
+        }
+
+        /// <summary>
+        /// Retrieves the index of an item contained in this OmniBuffer. If the OmniBuffer does't contain the item,
+        /// the function returns -1.
+        /// </summary>
+        /// <param name="Item">The item whose index is to be retrieved.</param>
+        /// <returns></returns>
+        public int IndexOf(T Item)
+        {
+            // check if base collection contains an item
+            if (this.baseCollection.Contains(Item))
+            {
+                // return item's index
+                return computeIndex(this.baseCollection.IndexOf(Item));
+            }
+            else
+            {
+                // return -1 since base collection doesn't contain an item
+                return -1;
+            }
+        }
+
         #endregion
 
         // functions relating to buffer-unique properties

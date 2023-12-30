@@ -20,21 +20,20 @@ namespace OmniCollections
         /// </summary>
         private OmniBuffer<T> baseCollection;
         /// <summary>
-        /// Omni buffer of flags, indicating if an item is accessible or not.
+        /// Omni buffer of ints, which represent the bagStateID when the item was grabbed last.
         /// </summary>
-        private OmniBuffer<FlagPtr> itemAccessibilityFlags;
+        private OmniBuffer<int> itemGrabbedIDs;
 
         /// <summary>
-        /// An flag that indicates whether items have been accessed or not. When an item is accessed,
-        /// the index corresponding to the item (in itemAccessibilityFlags collection) is assigned a reference
-        /// to this object.
+        /// When trying to grab an item from the bag, this value is checked against the item's
+        /// itemGrabbedID value. If the value is less than bagStateID, the item is grabbed and
+        /// its itemGrabbedID value is assigned bagStateID.
         /// 
-        /// When bag state is reset (items become accessible again), this itemAccessedFlag is set to null and then
-        /// re-initialized. As a result, all items in itemAccessibilityFlags will point to null (items that haven't ever
-        /// been accessed in addition to items who have been accessed and assigned a reference to this field, since the
-        /// reference points to an object that is null).
+        /// The purpose of this value is to ensure that items grabbed before the bag state was reset
+        /// can be grabbed after the reset, without having to manually iterate through the list and
+        /// reset every single item's itemGrabbedID.
         /// </summary>
-        private FlagPtr itemAccessedFlag;
+        private int bagStateID;
 
         #endregion
 
@@ -45,8 +44,8 @@ namespace OmniCollections
         {
             // initialize variables
             this.baseCollection = new OmniBuffer<T>();
-            this.itemAccessibilityFlags = new OmniBuffer<FlagPtr>();
-            this.itemAccessedFlag = new FlagPtr(true);
+            this.itemGrabbedIDs = new OmniBuffer<int>();
+            this.bagStateID = 1;
         }
 
         // Functions that relate to bag-specific functionality (pulling items out of bag, etc)
@@ -63,35 +62,20 @@ namespace OmniCollections
         /// <returns>Flag indicating whether item is accessible or not.</returns>
         public bool GrabItem(int itemIndex, out T bagItem)
         {
-            // check if flag has been assigned
-            if (this.itemAccessibilityFlags[itemIndex] == null)
+            // check if itemGrabbedID of item being requested is less than the current bag state ID
+            // (meaning it hasn't been grabbed from the bag after the last time the bag was reset)
+            if (this.itemGrabbedIDs[itemIndex] < bagStateID)
             {
                 // item hasn't been pulled from bag yet
                 // -pull item from bag
                 bagItem = this.baseCollection[itemIndex];
 
-                // -update item's flag in itemAccessibilityFlags by assigning a reference to itemAccessedFlag
-                this.itemAccessibilityFlags[itemIndex] = this.itemAccessedFlag;
+                // -update itemGrabbedID for current item to be that of bagStateID (to prevent item
+                //  from being pulled again before the bag state is reset)
+                this.itemGrabbedIDs[itemIndex] = bagStateID;
 
                 // return true since item was able to be pulled from bag
                 return true;
-            }
-            else
-            {
-                // check if flag value is true or not
-                if (!this.itemAccessibilityFlags[itemIndex].flagValue)
-                {
-                    // item hasn't been grabbed from bag yet, or was grabbed before the bag was reset.
-                    // -pull item from bag
-                    bagItem = this.baseCollection[itemIndex];
-
-                    // -update item's flag in itemAccessibilityFlags by assigning a reference to itemAccessedFlag
-                    this.itemAccessibilityFlags[itemIndex] = this.itemAccessedFlag;
-
-                    // return true since item was able to be pulled from bag
-                    return true;
-                }
-                // otherwise item was previously grabbed from bag
             }
 
             // item was pulled from bag previously
@@ -100,19 +84,26 @@ namespace OmniCollections
             return false;
         }
 
+        /// <summary>
+        /// Resets the state of the bag to before any items were grabbed, making all items in the bag available to grab again.
+        /// </summary>
         public void resetBagState()
         {
-            // reset flag state of item accessed flag (so items that were grabbed
-            // before the bag was reset, and still retain a reference to this instance
-            // of the itemAccessedFlag) will be able to be grabbed after the reset)
-            this.itemAccessedFlag.flagValue = false;
-            // break reference to previous instance of itemAccessedFlag, so items that
-            // were grabbed (and assigned the flag) won't be affected by the reset
-            this.itemAccessedFlag = null;
+            // increment the bag state ID
+            bagStateID++;
 
-            // create new instance of flag, assign it the value of true (to prevent
-            // items grabbed from bag being able to be grabbed more than once)
-            this.itemAccessedFlag = new FlagPtr(true);
+            // check if bag state ID is the max value of an int
+            if (bagStateID == Int32.MaxValue)
+            {
+                // need to go through flag list and reset all items (since can't increment bagStateID anymore)
+                for (int m = 0; m < itemGrabbedIDs.Count; m++)
+                {
+                    itemGrabbedIDs[m] = 0;
+                }
+
+                // reset bag state ID to 1
+                bagStateID = 1;
+            }
         }
 
         #endregion
@@ -128,21 +119,67 @@ namespace OmniCollections
         {
             // add item to base collection
             this.baseCollection.Add(Item);
-            // add accessibility flag for item
-            this.itemAccessibilityFlags.Add(null);
+            // add itemGrabbedID for item
+            this.itemGrabbedIDs.Add(0);
+        }
+
+        /// <summary>
+        /// Removes an item from the magic bag. Returns a boolean value indicating if item was not
+        /// in list or item was unsuccessfully removed.
+        /// </summary>
+        /// <param name="Item">The item to add.</param>
+        public bool Remove(T Item)
+        {
+            // check if base collection contains item
+            if (this.baseCollection.Contains(Item))
+            {
+                // remove item's itemGrabbedID
+                this.itemGrabbedIDs.RemoveAt(this.baseCollection.IndexOf(Item));
+                // remove item
+                this.baseCollection.Remove(Item);
+
+                // return true since item was successfully removed
+                return true;
+            }
+            else
+            {
+                // item wasn't in list
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Removes an item from the magic bag at the specified index.
+        /// </summary>
+        /// <param name="Item">The index of the item to remove.</param>
+        public void RemoveAt(int index)
+        {
+            // perform bounds check
+            if (index >= 0 && index < this.itemGrabbedIDs.Count)
+            {
+                // remove item's itemGrabbedID
+                this.itemGrabbedIDs.RemoveAt(index);
+                // remove item
+                this.baseCollection.RemoveAt(index);
+            }
+            else
+            {
+                // throw out of range exception
+                throw new IndexOutOfRangeException();
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the index of an item contained in this MagicBag. If the MagicBag does't contain the item,
+        /// the function returns -1.
+        /// </summary>
+        /// <param name="Item">The item whose index is to be retrieved.</param>
+        /// <returns></returns>
+        public bool Contains(T Item)
+        {
+            return this.baseCollection.Contains(Item);
         }
 
         #endregion
-    }
-
-    public class FlagPtr
-    {
-        // constants
-        public bool flagValue;
-
-        public FlagPtr(bool Value)
-        {
-            this.flagValue = Value;
-        }
     }
 }
