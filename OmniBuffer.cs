@@ -31,8 +31,9 @@ namespace OmniCollections
     /// A collection which wraps around a List collection to represent a "circular" buffer; that is, indices accessed
     /// which are larger than the collection size will be "wrapped around" to fit within the collection.
     /// 
-    /// The collection can be traversed "omnidirectionally": like a list (forwards or backwards), like a stack, or a queue (without
-    /// fully removing items). The start point ("0 index") of the collection can be arbitrarily assigned.
+    /// The collection can be traversed "omnidirectionally": forwards as well as backwards (without incurring the overhead of
+    /// actually reversing the items in the list). The start point ("0 index") of the collection can be anywhere within the list. 
+    /// An OmniBuffer can be used as a list or simply act as a wrapper around an existing list (see the "WrapList" function).
     /// </summary>
     public class OmniBuffer<T>
     {
@@ -54,6 +55,11 @@ namespace OmniCollections
         /// approach the start index of the pre-reversed buffer).
         /// </summary>
         private bool isBufferReversed;
+
+        /// <summary>
+        /// Flag used to determine if OmniBuffer is read only or not.
+        /// </summary>
+        private bool isReadOnly;
 
         #endregion
 
@@ -100,15 +106,52 @@ namespace OmniCollections
         {
             get
             {
-                return computeIndex(collectionStartIndex + baseCollection.Count - 1);
+                return computeIndex(collectionStartIndex + Count - 1);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a flag indicating if this OmniBuffer instance is read-only or not.
+        /// If set to true, item assignments and functions related to item addition/deletion will throw an exception.
+        /// </summary>
+        public bool IsReadOnly
+        {
+            get
+            {
+                return this.isReadOnly;
+            }
+
+            set
+            {
+                this.isReadOnly = value;
             }
         }
 
         #endregion
 
+        /// <summary>
+        /// Default constructor.
+        /// </summary>
         public OmniBuffer()
         {
+            // initialize instance variables
             this.baseCollection = new List<T>();
+            this.collectionStartIndex = 0;
+            this.isBufferReversed = false;
+            this.isReadOnly = false;
+        }
+
+        /// <summary>
+        /// Creates an OmniBuffer object with a deep copy of baseList.
+        /// To populate an OmniBuffer object with a shallow copy (reference to a list object),
+        /// use the default constructor and then call the WrapList function in the variable instance,
+        /// passing in a reference to the list to make a shallow copy of.
+        /// </summary>
+        /// <param name="baseList"></param>
+        public OmniBuffer(List<T> baseList)
+        {
+            // initialize instance variables
+            this.baseCollection = baseList.ToList(); // create a deep copy of the list provided.
             this.collectionStartIndex = 0;
             this.isBufferReversed = false;
         }
@@ -133,7 +176,16 @@ namespace OmniCollections
 
             set
             {
-                baseCollection[computeIndex(index)] = value;
+                // check if read only flag is set or not
+                if (!isReadOnly)
+                {
+                    // collection isn't read only; update value in list
+                    baseCollection[computeIndex(index)] = value;
+                }
+                else
+                {
+                    throw new Exception("Collection is read-only; cannot update items.");
+                }
             }
         }
 
@@ -145,38 +197,33 @@ namespace OmniCollections
         /// <returns>Index which corresponds to a location within the base collection list.</returns>
         private int computeIndex(int index)
         {
-            switch (this.isBufferReversed)
+            if (!isBufferReversed)
             {
-                case false:
-                    // -buffer is not reversed. Traverse buffer normally.
-                    // larger indices result in values that approach the start index "from the left" (wrapping around from the end of the base collection back to the start)
-                    return (collectionStartIndex + index) % Count;
-
-                case true:
-                    // -buffer has been reversed. Traverse buffer backwards.
-                    // -larger indices should result in values that approach the start index "from the right" (wrapping around from the start of the base collection back to the end)
-                    // -because of the peridocity involved when using the modulo operator, indices smaller than
-                    //  the collection start index repeat.
-                    // -can get values at smaller indices with larger (increasing) indices by adding the base list count
-                    //  to the start index (to complete the next "cycle") and subtracting the index provided to "move the
-                    //  clock hands back" to the desired index.
-
-                    // Example: Given the list "1,2,3,4,5", index 4 is the start index (contains the element '5') and
-                    // the list is reversed. The index provided by the indexer is 1.
-                    // 1. Add the list count to the start index: 4 + 5 = 9
-                    // 2. Subtract the index provided by the indexer: 9 - 1 = 8
-                    // 3. Apply the modulo operator with the base collection count to the result, to move the
-                    //     result back into the range of the base collection (0 to base collection count): 8 % 5 = 3
-                    // 
-                    // -The index 3 is one less than the start index, which was 4, which is what was expected.
-
-                    return (collectionStartIndex + (Count - index)) % Count;
-
-                default:
-                    return -1;
+                // -buffer is not reversed. Traverse buffer normally.
+                // larger indices result in values that approach the start index "from the left" (wrapping around from the end of the base collection back to the start)
+                return (collectionStartIndex + index) % Count;
             }
+            else
+            {
+                // -buffer has been reversed. Traverse buffer backwards.
+                // -larger indices should result in values that approach the start index "from the right" (wrapping around from the start of the base collection back to the end)
+                // -because of the peridocity involved when using the modulo operator, indices smaller than
+                //  the collection start index repeat.
+                // -can get values at smaller indices with larger (increasing) indices by adding the base list count
+                //  to the start index (to complete the next "cycle") and subtracting the index provided to "move the
+                //  clock hands back" to the desired index.
 
-            //return (circularIndex % Count);
+                // Example: Given the list "1,2,3,4,5", index 4 is the start index (contains the element '5') and
+                // the list is reversed. The index provided by the indexer is 1.
+                // 1. Add the list count to the start index: 4 + 5 = 9
+                // 2. Subtract the index provided by the indexer: 9 - 1 = 8
+                // 3. Apply the modulo operator with the base collection count to the result, to move the
+                //     result back into the range of the base collection (0 to base collection count): 8 % 5 = 3
+                // 
+                // -The index 3 is one less than the start index, which was 4, which is what was expected.
+
+                return (collectionStartIndex + (Count - index)) % Count;
+            }
         }
 
         #endregion
@@ -190,14 +237,21 @@ namespace OmniCollections
         /// <param name="Item">The item to add.</param>
         public void Add(T Item)
         {
-            if (baseCollection.Count == 0)
+            if (!isReadOnly)
             {
-                baseCollection.Add(Item);
+                if (baseCollection.Count == 0)
+                {
+                    baseCollection.Add(Item);
+                }
+                else
+                {
+                    // inserts item after EndIndex
+                    baseCollection.Insert(EndIndex + 1, Item);
+                }
             }
             else
             {
-                // inserts item after EndIndex
-                baseCollection.Insert(EndIndex+1, Item);
+                throw new Exception("Collection is read-only; cannot add items.");
             }
         }
 
@@ -207,8 +261,15 @@ namespace OmniCollections
         /// <param name="Item">The item to remove.</param>
         public void Remove(T Item)
         {
-            // remove item from base collection
-            baseCollection.Remove(Item);
+            if (!isReadOnly)
+            {
+                // remove item from base collection
+                baseCollection.Remove(Item);
+            }
+            else
+            {
+                throw new Exception("Collection is read-only; cannot remove items.");
+            }
         }
 
         /// <summary>
@@ -217,8 +278,15 @@ namespace OmniCollections
         /// <param name="index">The index of the item to remove.</param>
         public void RemoveAt(int index)
         {
-            // remove item from base collection at specified index (input is expected to be a circular index)
-            baseCollection.RemoveAt(computeIndex(index));
+            if (!isReadOnly)
+            {
+                // remove item from base collection at specified index (input is expected to be a circular index)
+                baseCollection.RemoveAt(computeIndex(index));
+            }
+            else
+            {
+                throw new Exception("Collection is read-only; cannot remove items.");
+            }
         }
 
         #endregion
@@ -267,6 +335,24 @@ namespace OmniCollections
 
             // update "buffer reversed" flag to indicate current state
             this.isBufferReversed = !this.isBufferReversed;
+        }
+
+        /// <summary>
+        /// Assigns a reference (shallow copy) of baseList to this OmniBuffer instance's
+        /// base collection. Useful for quickly gaining access to OmniBuffer features without
+        /// incurring the overhead of copying items into the OmniBuffer.
+        /// 
+        /// This function will reset StartIndex to 0 and IsReadOnly to false.
+        /// </summary>
+        /// <param name="baseList"></param>
+        public void WrapList(List<T> baseList)
+        {
+            // assign reference to baseList to baseCollection
+            this.baseCollection = baseList;
+            // update instance variables
+            this.collectionStartIndex = 0;
+            this.isBufferReversed = false;
+            this.isReadOnly = false;
         }
 
         #endregion
