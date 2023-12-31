@@ -142,7 +142,7 @@ namespace OmniCollections
         }
 
         /// <summary>
-        /// Creates an OmniBuffer object with a deep copy of baseList.
+        /// Creates an OmniBuffer object with a deep copy of a list (baseList)
         /// To populate an OmniBuffer object with a shallow copy (reference to a list object),
         /// use the default constructor and then call the WrapList function in the variable instance,
         /// passing in a reference to the list to make a shallow copy of.
@@ -152,6 +152,18 @@ namespace OmniCollections
         {
             // initialize instance variables
             this.baseCollection = baseList.ToList(); // create a deep copy of the list provided.
+            this.collectionStartIndex = 0;
+            this.isBufferReversed = false;
+        }
+
+        /// <summary>
+        /// Creates an OmniBuffer object with a deep copy of an array (baseArray).
+        /// </summary>
+        /// <param name="baseArray"></param>
+        public OmniBuffer(T[] baseArray)
+        {
+            // initialize instance variables
+            this.baseCollection = baseArray.ToList(); // create a deep copy of the list provided.
             this.collectionStartIndex = 0;
             this.isBufferReversed = false;
         }

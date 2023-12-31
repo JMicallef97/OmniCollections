@@ -6,3 +6,4 @@ C:\Users\jmicallef1\Documents\Visual Studio 2010\Projects\OmniBuffer\OmniBuffer\
 C:\Users\jmicallef1\Documents\Visual Studio 2010\Projects\OmniBuffer\OmniBuffer\bin\Release\OmniCollections.pdb
 C:\Users\jmicallef1\Documents\Visual Studio 2010\Projects\OmniBuffer\OmniBuffer\obj\Release\OmniCollections.dll
 C:\Users\jmicallef1\Documents\Visual Studio 2010\Projects\OmniBuffer\OmniBuffer\obj\Release\OmniCollections.pdb
+C:\Users\jmicallef1\Documents\Visual Studio 2010\Projects\OmniBuffer\OmniBuffer\obj\Release\OmniCollections.csprojResolveAssemblyReference.cache
