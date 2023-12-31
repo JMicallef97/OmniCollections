@@ -176,11 +176,17 @@ namespace OmniCollections
         {
             get
             {
-                // check if index provided is less than 0
-                if (index < 0)
+                //// check if index provided is less than 0
+                //if (index < 0)
+                //{
+                //    // index is out of range, throw exception
+                //    throw new IndexOutOfRangeException();
+                //}
+
+                // wrap negative indices around ("turn clock hands backward")
+                while (index < 0)
                 {
-                    // index is out of range, throw exception
-                    throw new IndexOutOfRangeException();
+                    index += Count;
                 }
 
                 return baseCollection[computeIndex(index)];
@@ -236,6 +242,24 @@ namespace OmniCollections
 
                 return (collectionStartIndex + (Count - index)) % Count;
             }
+        }
+
+        /// <summary>
+        /// Returns the first item (item located at StartIndex) in this OmniBuffer.
+        /// </summary>
+        /// <returns></returns>
+        public T First()
+        {
+            return baseCollection[collectionStartIndex];
+        }
+
+        /// <summary>
+        /// Returns the last item (item located at EndIndex) in this OmniBuffer.
+        /// </summary>
+        /// <returns></returns>
+        public T Last()
+        {
+            return baseCollection[EndIndex];
         }
 
         #endregion
