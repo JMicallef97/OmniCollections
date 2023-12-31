@@ -52,33 +52,41 @@ namespace OmniCollections
         #region BAG RELATED FUNCTIONS
 
         /// <summary>
-        /// Attempts to grab an item from the bag at the specified index. If the item is still accessible (hasn't been
-        /// pulled from the bag yet) the function will return true and bagItem will be assigned the value of (or reference to) the item.
-        /// If the item is not accessible, the function will return false and bagItem will be populated with the default value of the
+        /// Attempts to grab an item from the bag at the specified index. If the index requested isn't accessible, the
+        /// bag is searched (checking indices of increasing size) until an accessible item is found, at which point the
+        /// function will return true and populate bagItem with the value of (or reference to) the item at that index. If no
+        /// accessible items are found then function will return false and bagItem will be populated with the default value of the
         /// type of item the bag is holding.
         /// </summary>
         /// <param name="itemIndex">The index of the item to access</param>
         /// <param name="bagItem">The value (or reference to) of the item being grabbed from the bag.</param>
-        /// <returns>Flag indicating whether item is accessible or not.</returns>
+        /// <returns>Flag indicating whether function succeeded or not.</returns>
         public bool GrabItem(int itemIndex, out T bagItem)
         {
-            // check if itemGrabbedID of item being requested is less than the current bag state ID
-            // (meaning it hasn't been grabbed from the bag after the last time the bag was reset)
-            if (this.itemGrabbedIDs[itemIndex] < bagStateID)
+            // because the base collection is an OmniBuffer and supports circular indices, we can
+            // directly iterate through the entire list starting from the index no matter what the
+            // index value is, since values larger than the list size will simply wrap back around to
+            // the start of the list.
+            for (int i = itemIndex; i < baseCollection.Count + itemIndex; i++)
             {
-                // item hasn't been pulled from bag yet
-                // -pull item from bag
-                bagItem = this.baseCollection[itemIndex];
+                // check if itemGrabbedID of item being requested is less than the current bag state ID
+                // (meaning it hasn't been grabbed from the bag after the last time the bag was reset)
+                if (this.itemGrabbedIDs[i] < bagStateID)
+                {
+                    // item hasn't been pulled from bag yet
+                    // -pull item from bag
+                    bagItem = this.baseCollection[i];
 
-                // -update itemGrabbedID for current item to be that of bagStateID (to prevent item
-                //  from being pulled again before the bag state is reset)
-                this.itemGrabbedIDs[itemIndex] = bagStateID;
+                    // -update itemGrabbedID for current item to be that of bagStateID (to prevent item
+                    //  from being pulled again before the bag state is reset)
+                    this.itemGrabbedIDs[i] = bagStateID;
 
-                // return true since item was able to be pulled from bag
-                return true;
+                    // return true since item was able to be pulled from bag
+                    return true;
+                }
             }
 
-            // item was pulled from bag previously
+            // if code reaches this point, bag did not contain any available items.
             // -return default value and false
             bagItem = default(T);
             return false;
@@ -87,7 +95,7 @@ namespace OmniCollections
         /// <summary>
         /// Resets the state of the bag to before any items were grabbed, making all items in the bag available to grab again.
         /// </summary>
-        public void resetBagState()
+        public void ResetBagState()
         {
             // increment the bag state ID
             bagStateID++;
