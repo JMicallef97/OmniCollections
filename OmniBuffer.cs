@@ -176,19 +176,8 @@ namespace OmniCollections
         {
             get
             {
-                //// check if index provided is less than 0
-                //if (index < 0)
-                //{
-                //    // index is out of range, throw exception
-                //    throw new IndexOutOfRangeException();
-                //}
-
-                // wrap negative indices around ("turn clock hands backward")
-                while (index < 0)
-                {
-                    index += Count;
-                }
-
+                // return item directly
+                // -note, function automatically handles negative indices
                 return baseCollection[computeIndex(index)];
             }
 
@@ -215,6 +204,12 @@ namespace OmniCollections
         /// <returns>Index which corresponds to a location within the base collection list.</returns>
         private int computeIndex(int index)
         {
+            // wrap negative indices around ("turn clock hands backward")
+            while (index < 0)
+            {
+                index += Count;
+            }
+
             if (!isBufferReversed)
             {
                 // -buffer is not reversed. Traverse buffer normally.
@@ -353,6 +348,48 @@ namespace OmniCollections
             {
                 // return -1 since base collection doesn't contain an item
                 return -1;
+            }
+        }
+
+        /// <summary>
+        /// Inserts an item into the list at the specified index (that is, after the Insert operation is performed,
+        /// the inserted item will be accessible at the specified index).
+        /// </summary>
+        /// <param name="Item">The item to insert.</param>
+        /// <param name="index">The index to insert the item at. After the item is inserted, it can be accessed at the index specified.</param>
+        public void Insert(int index, T Item)
+        {
+            // insert the item at the base list index, which is computed from the index parameter (circular index) by the computeIndex function.
+            // -computeIndex function handles negative indices without problems
+            this.baseCollection.Insert(computeIndex(index), Item);
+        }
+
+        /// <summary>
+        /// Inserts a collection into the list at the specified index (that is, after the Insert operation is performed,
+        /// the first item of the inserted collection will be accessible at the specified index).
+        /// </summary>
+        /// <param name="Item">The collection of items to insert.</param>
+        /// <param name="index">The index to insert the collection at.</param>
+        public void InsertRange(int index, IEnumerable<T> collection)
+        {
+            // check if trying to insert items at the end of the list
+            if (computeIndex(index) == collectionStartIndex)
+            {
+                // use the "Add" function instead (since items are effectively being added to the end of the list)
+                // iterate through items, adding them to list and incrementing
+                for (int m = 0; m < collection.Count(); m++)
+                {
+                    this.Add(collection.ElementAt(m));
+                }
+            }
+            else
+            {
+                // iterate through items, inserting them at index and incrementing
+                for (int m = 0; m < collection.Count(); m++)
+                {
+                    this.Insert(index, collection.ElementAt(m));
+                    index++;
+                }
             }
         }
 
